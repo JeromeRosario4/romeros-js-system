@@ -1,28 +1,24 @@
 {
-  "name": "romeros-js-system",
+  "name": "s-2025",
   "version": "1.0.0",
-  "description": "��#\u0000 \u0000r\u0000o\u0000m\u0000e\u0000r\u0000o\u0000s\u0000-\u0000n\u0000o\u0000d\u0000e\u0000\r\u0000 \u0000",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/JeromeRosario4/romeros-js-system.git"
-  },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/JeromeRosario4/romeros-js-system/issues"
-  },
-  "homepage": "https://github.com/JeromeRosario4/romeros-js-system#readme",
+  "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.0.1",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.14.1"
+    "multer": "^2.0.1",
+    "mysql2": "^3.14.1",
+    "nodemailer": "^7.0.3",
+    "nodemon": "^3.1.10"
   }
 }

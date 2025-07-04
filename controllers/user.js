@@ -34,7 +34,7 @@ const registerUser = async (req, res) => {
 
 const loginUser = (req, res) => {
   const { email, password } = req.body;
-  const sql = 'SELECT id, name, email, password FROM users WHERE email = ? AND deleted_at IS NULL';
+  const sql = 'SELECT id, name, email, password FROM user WHERE email = ? AND deleted_at IS NULL';
   connection.execute(sql, [email], async (err, results) => {
     if (err) {
       console.log(err);
