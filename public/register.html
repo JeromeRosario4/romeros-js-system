@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>items</title>
+    <title>User Registration</title>
     <!-- Latest compiled and minified CSS -->
     <link
       rel="stylesheet"
@@ -80,59 +80,204 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
-
-    <script src="js/user.js"></script>
   </head>
 
-    <title>Document</title>
-  </head>
   <body>
-    <form id="registerForm" style="max-width: 400px; margin: auto">
-      <h2>Register</h2>
-      <div style="margin-bottom: 15px">
-        <label for="name">Name:</label><br />
-        <input
-          type="text"
-          id="name"
-          name="name"
-          required
-          style="width: 100%; padding: 8px"
-        />
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-center">User Registration</h3>
+            </div>
+            <div class="card-body">
+              <form id="registerForm">
+                <div class="form-group">
+                  <label for="name">Full Name:</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="name"
+                    name="name"
+                    required
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="email">Email Address:</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    name="email"
+                    required
+                    placeholder="Enter your email address"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="password">Password:</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    required
+                    placeholder="Enter your password"
+                    minlength="6"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-block"
+                  id="register"
+                >
+                  <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                  <span id="buttonText">Register</span>
+                </button>
+              </form>
+              <div class="text-center mt-3">
+                <p>Already have an account? <a href="/login.html">Login here</a></p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div style="margin-bottom: 15px">
-        <label for="email">Email:</label><br />
-        <input
-          type="email"
-          id="email"
-          name="email"
-          required
-          style="width: 100%; padding: 8px"
-        />
-      </div>
-      <div style="margin-bottom: 15px">
-        <label for="password">Password:</label><br />
-        <input
-          type="password"
-          id="password"
-          name="password"
-          required
-          style="width: 100%; padding: 8px"
-        />
-      </div>
-      <button
-        type="submit"
-        style="
-          width: 100%;
-          padding: 10px;
-          background: #007bff;
-          color: #fff;
-          border: none;
-          border-radius: 4px;
-        "
-        id="register"
-      >
-        Register
-      </button>
-    </form>
+    </div>
+
+    <script>
+      $(document).ready(function() {
+        $('#registerForm').submit(async function(e) {
+          e.preventDefault();
+          
+          // Get form values
+          const name = $('#name').val().trim();
+          const email = $('#email').val().trim();
+          const password = $('#password').val();
+          
+          // Client-side validation
+          if (!name || !email || !password) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Missing Information',
+              text: 'Please fill in all required fields'
+            });
+            return;
+          }
+          
+          if (password.length < 6) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Password Too Short',
+              text: 'Password must be at least 6 characters long'
+            });
+            return;
+          }
+          
+          // Show loading state
+          const submitBtn = $('#register');
+          const loadingSpinner = $('#loadingSpinner');
+          const buttonText = $('#buttonText');
+          
+          submitBtn.prop('disabled', true);
+          loadingSpinner.removeClass('d-none');
+          buttonText.text('Registering...');
+          
+          try {
+            // Test connection first
+            console.log('Attempting to connect to:', 'http://localhost:3000/api/register');
+            
+            const response = await fetch('/api/register', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ name, email, password })
+});
+            
+            console.log('Response status:', response.status);
+            
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            if (!response.ok) {
+              throw new Error(data.error || 'Registration failed');
+            }
+            
+            // Success notification
+            Swal.fire({
+              icon: 'success',
+              title: 'Registration Successful!',
+              text: 'You can now log in with your credentials',
+              showConfirmButton: true,
+              timer: 3000
+            }).then(() => {
+              // Clear form
+              $('#registerForm')[0].reset();
+              
+              // Redirect to login page
+              window.location.href = '/login.html';
+            });
+            
+          } catch (error) {
+            console.error('Full error details:', error);
+            
+            let errorMessage = 'Something went wrong. Please try again.';
+            
+            if (error.message === 'Failed to fetch') {
+              errorMessage = 'Cannot connect to server. Please check:\n' +
+                           '• Is the backend server running?\n' +
+                           '• Is it running on port 3000?\n' +
+                           '• Check browser console for details';
+            } else {
+              errorMessage = error.message;
+            }
+            
+            // Error notification
+            Swal.fire({
+              icon: 'error',
+              title: 'Registration Failed',
+              text: errorMessage,
+              footer: 'Check browser console (F12) for technical details'
+            });
+          } finally {
+            // Reset button state
+            submitBtn.prop('disabled', false);
+            loadingSpinner.addClass('d-none');
+            buttonText.text('Register');
+          }
+        });
+        
+        // Real-time email validation
+        $('#email').on('blur', function() {
+          const email = $(this).val();
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          
+          if (email && !emailPattern.test(email)) {
+            $(this).addClass('is-invalid');
+            if (!$(this).siblings('.invalid-feedback').length) {
+              $(this).after('<div class="invalid-feedback">Please enter a valid email address</div>');
+            }
+          } else {
+            $(this).removeClass('is-invalid');
+            $(this).siblings('.invalid-feedback').remove();
+          }
+        });
+        
+        // Real-time password validation
+        $('#password').on('input', function() {
+          const password = $(this).val();
+          
+          if (password.length > 0 && password.length < 6) {
+            $(this).addClass('is-invalid');
+            if (!$(this).siblings('.invalid-feedback').length) {
+              $(this).after('<div class="invalid-feedback">Password must be at least 6 characters long</div>');
+            }
+          } else {
+            $(this).removeClass('is-invalid');
+            $(this).siblings('.invalid-feedback').remove();
+          }
+        });
+      });
+    </script>
   </body>
 </html>
