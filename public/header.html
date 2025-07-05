@@ -12,20 +12,101 @@
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav ml-auto">
-      <li class="nav-item active">
+    <ul class="navbar-nav ml-auto" id="navLinks">
+      <li class="nav-item" id="homeLink">
         <a class="nav-link" href="home.html">Home</a>
       </li>
-      <li class="nav-item">
+
+      <!-- Logged-in only -->
+      <li class="nav-item" id="profileLink">
         <a class="nav-link" href="profile.html">Profile</a>
       </li>
-      <li class="nav-item">
+      <li class="nav-item" id="cartLink">
+        <a class="nav-link" href="cart.html">Cart</a>
+      </li>
+      <li class="nav-item" id="ordersLink">
+        <a class="nav-link" href="orders.html">Orders</a>
+      </li>
+      <li class="nav-item" id="logoutLink">
+        <a class="nav-link" href="#" id="logoutBtn">Logout</a>
+      </li>
+
+      <!-- Logged-out only -->
+      <li class="nav-item" id="registerLink">
         <a class="nav-link" href="register.html">Register</a>
       </li>
-      <li class="nav-item" id="log">
+      <li class="nav-item" id="loginLink">
         <a class="nav-link" href="login.html">Login</a>
       </li>
 
+      <!-- Admin only -->
+      <li class="nav-item" id="adminLink">
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+      </li>
     </ul>
   </div>
 </nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  // Elements
+  const profileLink = document.getElementById('profileLink');
+  const cartLink = document.getElementById('cartLink');
+  const ordersLink = document.getElementById('ordersLink');
+  const registerLink = document.getElementById('registerLink');
+  const loginLink = document.getElementById('loginLink');
+  const logoutLink = document.getElementById('logoutLink');
+  const adminLink = document.getElementById('adminLink');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  if (token && user) {
+    // Logged in
+    profileLink.style.display = 'block';
+    cartLink.style.display = 'block';
+    ordersLink.style.display = 'block';
+    logoutLink.style.display = 'block';
+
+    registerLink.style.display = 'none';
+    loginLink.style.display = 'none';
+
+    // Admin access
+    if (user.role === 'admin') {
+      adminLink.style.display = 'block';
+    } else {
+      adminLink.style.display = 'none';
+    }
+  } else {
+    // Logged out
+    profileLink.style.display = 'none';
+    cartLink.style.display = 'none';
+    ordersLink.style.display = 'none';
+    logoutLink.style.display = 'none';
+    adminLink.style.display = 'none';
+
+    registerLink.style.display = 'block';
+    loginLink.style.display = 'block';
+  }
+
+  // Logout
+  logoutBtn?.addEventListener('click', function (e) {
+    e.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'home.html';
+  });
+});
+</script>
+
+<style>
+/* Hide all optional links initially */
+#profileLink,
+#cartLink,
+#ordersLink,
+#logoutLink,
+#adminLink {
+  display: none;
+}
+</style>
