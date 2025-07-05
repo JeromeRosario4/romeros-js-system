@@ -61,14 +61,26 @@ $(document).ready(function () {
     password: $('#password').val()
   }),
     success: function(response) {
-      if (response && response.token) {
-        // Successful login handling
-        localStorage.setItem('token', response.token);
-        window.location.href = '/dashboard.html';
+  if (response && response.token) {
+    localStorage.setItem('token', response.token);
+    
+    // Decode the JWT token to get the role
+    const tokenParts = response.token.split('.');
+    if (tokenParts.length === 3) {
+      const payload = JSON.parse(atob(tokenParts[1]));
+      
+      if (payload.role === 'admin') {
+        window.location.href = '/public/dashboard.html';
       } else {
-        Swal.fire('Error', 'Invalid response from server', 'error');
+        window.location.href = '/public/home.html';
       }
-    },
+    } else {
+      Swal.fire('Error', 'Invalid token format', 'error');
+    }
+  } else {
+    Swal.fire('Error', 'Invalid response from server', 'error');
+  }
+},
     error: function(xhr) {
       let errorMsg = 'Login failed';
       

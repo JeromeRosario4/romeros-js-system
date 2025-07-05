@@ -33,12 +33,16 @@ const registerUser = async (req, res) => {
 };
 const loginUser = (req, res) => {
   const { email, password } = req.body;
-  const sql = 'SELECT id, name, email, password FROM users WHERE email = ? AND deleted_at IS NULL';
+  
+  // Include role in the SELECT query
+  const sql = 'SELECT id, name, email, password, role FROM users WHERE email = ? AND deleted_at IS NULL';
+  
   connection.execute(sql, [email], async (err, results) => {
     if (err) {
       console.log('DB Error:', err);
       return res.status(500).json({ error: 'Error logging in', details: err });
     }
+    
     if (results.length === 0) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
@@ -52,11 +56,26 @@ const loginUser = (req, res) => {
       }
 
       delete user.password;
-      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+      
+      // Create token with user role included
+      const token = jwt.sign(
+        { 
+          id: user.id,
+          role: user.role  // Include role in token
+        }, 
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
 
       return res.status(200).json({
-        success: "welcome back",
-        user,
+        success: true,
+        message: "Login successful",
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role  // Send role to frontend
+        },
         token
       });
     } catch (e) {
