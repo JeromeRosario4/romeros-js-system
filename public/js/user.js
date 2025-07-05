@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = 'http://192.168.1.47:4000/'
+    const API_BASE_URL = 'http://localhost:4000/api/v1';
 
     const getToken = () => {
         const userId = sessionStorage.getItem('userId');
@@ -49,49 +49,47 @@ $(document).ready(function () {
         });
     });
 
-    $("#login").on('click', function (e) {
-        e.preventDefault();
-
-        let email = $("#email").val()
-        let password = $("#password").val()
-        let user = {
-            email,
-            password
+    $('#loginForm').submit(function(e) {
+  e.preventDefault();
+  
+  $.ajax({
+    url: `${API_BASE_URL}/login`,
+    method: 'POST',
+    contentType: 'application/json',
+   data: JSON.stringify({
+    email: $('#email').val(),
+    password: $('#password').val()
+  }),
+    success: function(response) {
+      if (response && response.token) {
+        // Successful login handling
+        localStorage.setItem('token', response.token);
+        window.location.href = '/dashboard.html';
+      } else {
+        Swal.fire('Error', 'Invalid response from server', 'error');
+      }
+    },
+    error: function(xhr) {
+      let errorMsg = 'Login failed';
+      
+      // Try to get error message from response
+      if (xhr.responseJSON && xhr.responseJSON.message) {
+        errorMsg = xhr.responseJSON.message;
+      } else if (xhr.status === 404) {
+        errorMsg = 'API endpoint not found. Please check the server.';
+      } else if (xhr.responseText) {
+        try {
+          const err = JSON.parse(xhr.responseText);
+          errorMsg = err.message || errorMsg;
+        } catch (e) {
+          errorMsg = xhr.responseText || errorMsg;
         }
-        $.ajax({
-            method: "POST",
-            url: `${url}api/v1/login`,
-            data: JSON.stringify(user),
-            processData: false,
-            contentType: 'application/json; charset=utf-8',
-            dataType: "json",
-            success: function (data) {
-                console.log(data);
-                Swal.fire({
-                    text: data.success,
-                    showConfirmButton: false,
-                    position: 'bottom-right',
-                    timer: 1000,
-                    timerProgressBar: true
-
-                });
-                sessionStorage.setItem('userId', JSON.stringify(data.user.id))
-                window.location.href = 'profile.html'
-            },
-            error: function (error) {
-                console.log(error);
-                Swal.fire({
-                    icon: "error",
-                    text: error.responseJSON.message,
-                    showConfirmButton: false,
-                    position: 'bottom-right',
-                    timer: 1000,
-                    timerProgressBar: true
-
-                });
-            }
-        });
-    });
+      }
+      
+      Swal.fire('Error', errorMsg, 'error');
+    }
+  });
+});
 
     $('#avatar').on('change', function () {
         const file = this.files[0];

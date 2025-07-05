@@ -31,13 +31,12 @@ const registerUser = async (req, res) => {
   }
 
 };
-
 const loginUser = (req, res) => {
   const { email, password } = req.body;
-  const sql = 'SELECT id, name, email, password FROM user WHERE email = ? AND deleted_at IS NULL';
+  const sql = 'SELECT id, name, email, password FROM users WHERE email = ? AND deleted_at IS NULL';
   connection.execute(sql, [email], async (err, results) => {
     if (err) {
-      console.log(err);
+      console.log('DB Error:', err);
       return res.status(500).json({ error: 'Error logging in', details: err });
     }
     if (results.length === 0) {
@@ -46,20 +45,24 @@ const loginUser = (req, res) => {
 
     const user = results[0];
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    try {
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      }
+
+      delete user.password;
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+
+      return res.status(200).json({
+        success: "welcome back",
+        user,
+        token
+      });
+    } catch (e) {
+      console.log('Bcrypt/JWT Error:', e);
+      return res.status(500).json({ error: 'Internal server error', details: e.message });
     }
-
-    // Remove password from response
-    delete user.password;
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET,);
-
-    return res.status(200).json({
-      success: "welcome back",
-      user: results[0],
-      token
-    });
   });
 };
 
