@@ -1,295 +1,254 @@
 $(document).ready(function () {
-    const API_BASE_URL = 'http://localhost:4000/api/v1/';
-    let currentItemId = null;
-    let categories = []; // Store categories globally
+    const url = 'http://localhost:4000/'
 
-    // Initialize DataTable
-    const itemTable = $('#itable').DataTable({
+    // Load categories when page loads
+    loadCategories();
+
+    $('#itable').DataTable({
         ajax: {
-            url: API_BASE_URL + 'items',
+            url: `${url}api/v1/items`,
             dataSrc: "rows",
-            error: function(xhr, status, error) {
-                console.error('AJAX Error:', status, error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Failed to load items. Please try again later.',
-                    icon: 'error'
-                });
-            }
+            // headers: {
+            //     "Authorization": "Bearer " + access_token 
+            // },
         },
         dom: 'Bfrtip',
         buttons: [
             'pdf',
             'excel',
             {
-                text: '<i class="fas fa-plus"></i> Add Item',
+                text: 'Add item',
                 className: 'btn btn-primary',
-                action: function () {
-                    resetItemForm();
+                action: function (e, dt, node, config) {
+                    $("#iform").trigger("reset");
                     $('#itemModal').modal('show');
-                    $('#modalTitle').text('Add New Item');
-                    $('#itemSubmit').show();
                     $('#itemUpdate').hide();
+                    $('#itemSubmit').show();
+                    $('#itemImage').remove()
                 }
             }
         ],
         columns: [
-            { data: 'item_id', title: 'ID' },
-            { 
-                data: 'image', 
-                title: 'Image',
-                render: function(data) {
-                    return data ? `<img src="${API_BASE_URL.replace('/api/v1/', '')}${data}" class="img-thumbnail" width="50">` : 
-                                 '<i class="fas fa-box-open fa-2x text-muted"></i>';
-                }
-            },
-            { data: 'item_name', title: 'Item Name' },
-            { data: 'description', title: 'Description' },
-            { 
-                data: 'category_id', 
-                title: 'Category',
-                render: function(data, type, row) {
-                    // Find category name from stored categories
-                    const category = categories.find(cat => cat.category_id == data);
-                    return category ? category.description : 'N/A';
-                }
-            },
-            { 
-                data: 'cost_price', 
-                title: 'Cost Price',
-                render: function(data) {
-                    return data ? `$${parseFloat(data).toFixed(2)}` : 'N/A';
-                }
-            },
-            { 
-                data: 'sell_price', 
-                title: 'Sell Price',
-                render: function(data) {
-                    return data ? `$${parseFloat(data).toFixed(2)}` : 'N/A';
-                }
-            },
-            { 
-                data: 'quantity', 
-                title: 'Stock',
-                render: function(data) {
-                    const badgeClass = data > 0 ? 'bg-success' : 'bg-danger';
-                    return `<span class="badge ${badgeClass}">${data || 0}</span>`;
-                }
-            },
+            { data: 'item_id' },
             {
                 data: null,
-                title: 'Actions',
-                render: function(data) {
-                    return `
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-warning editBtn me-1" data-id="${data.item_id}">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger deleteBtn" data-id="${data.item_id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                },
-                orderable: false,
-                searchable: false
-            }
-        ]
-    });
-
-    // Reset form and clear all fields
-    function resetItemForm() {
-        $('#iform')[0].reset();
-        $('#itemId').remove();
-        $('#imagePreview').empty();
-        $('input[name="image"]').val('');
-    }
-
-    // Load item data for editing
-    function loadItemForEdit(itemId) {
-        $.ajax({
-            method: "GET",
-            url: API_BASE_URL + 'items/' + itemId,
-            dataType: "json",
-            success: function (response) {
-                const item = response.result[0];
-                $('#itemId').val(item.item_id);
-                $('#itemName').val(item.item_name);
-                $('#description').val(item.description);
-                
-                // Set category select value
-                if (item.category_id) {
-                    $('#category').val(item.category_id);
-                }
-                
-                $('#costPrice').val(item.cost_price);
-                $('#sellPrice').val(item.sell_price);
-                $('#quantity').val(item.quantity);
-                
-                if (item.image) {
-                    $('#imagePreview').html(`
-                        <img src="${API_BASE_URL.replace('/api/v1/', '')}${item.image}" class="img-thumbnail" width="150">
-                        <div class="form-check mt-2">
-                            <input class="form-check-input" type="checkbox" id="removeImage" name="remove_image">
-                            <label class="form-check-label" for="removeImage">Remove current image</label>
-                        </div>
-                    `);
+                render: function (data, type, row) {
+                    return `<img src="${url}${data.image}" width="50" height="60">`;
                 }
             },
-            error: function (error) {
-                Swal.fire('Error', 'Failed to load item data', 'error');
-                console.error(error);
+            { data: 'item_name' },
+            { data: 'description' },
+            { data: 'cost_price' },
+            { data: 'sell_price' },
+            { data: 'category' },
+            { data: 'quantity' },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return "<a href='#' class = 'editBtn' id='editbtn' data-id=" + data.item_id + "><i class='fas fa-edit' aria-hidden='true' style='font-size:24px' ></i></a><a href='#'  class='deletebtn' data-id=" + data.item_id + "><i  class='fas fa-trash-alt' style='font-size:24px; color:red' ></a></i>";
+                }
             }
+        ],
+    });
+
+    // Function to load categories into dropdown
+    function loadCategories() {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                method: "GET",
+                url: `${url}api/v1/categories`,
+                dataType: "json",
+                success: function (data) {
+                    const categorySelect = $('#category');
+                    categorySelect.empty();
+                    categorySelect.append('<option value="">Select a category</option>');
+
+                    if (data.rows && data.rows.length > 0) {
+                        data.rows.forEach(function (category) {
+                            categorySelect.append(
+                                `<option value="${category.category_id}" data-description="${category.description}">
+                                ${category.description}
+                            </option>`
+                            );
+                        });
+                    }
+                    resolve(); // ✅ Done loading
+                },
+                error: function (error) {
+                    console.log('Error loading categories:', error);
+                    $('#category').html('<option value="">Error loading categories</option>');
+                    reject(error);
+                }
+            });
         });
     }
 
-    // Create new item
-    $("#itemSubmit").on('click', function (e) {
-        e.preventDefault();
-        const formData = new FormData($('#iform')[0]);
-        
-        if (!formData.get('item_name') || !formData.get('cost_price') || !formData.get('sell_price')) {
-            Swal.fire('Error', 'Please fill all required fields', 'error');
-            return;
+
+    // Show category description when category is selected
+    $('#category').on('change', function () {
+        const selectedOption = $(this).find('option:selected');
+        const description = selectedOption.data('description');
+
+        if (description) {
+            $('#category-description').text(`Category: ${description}`);
+        } else {
+            $('#category-description').text('');
         }
 
+    });
+
+    // Add new item button click handler
+    $('[data-target="#itemModal"]').on('click', function () {
+        $("#iform").trigger("reset");
+        $('#itemModal').modal('show');
+        $('#itemUpdate').hide();
+        $('#itemSubmit').show();
+        $('#itemImage').remove();
+        $('#itemId').remove();
+        $('#category-description').text('');
+    });
+
+    $("#itemSubmit").on('click', function (e) {
+        e.preventDefault();
+        var data = $('#iform')[0];
+        console.log(data);
+        let formData = new FormData(data);
+        console.log(formData);
+        for (var pair of formData.entries()) {
+            console.log(pair[0] + ', ' + pair[1]);
+        }
         $.ajax({
             method: "POST",
-            url: API_BASE_URL + 'items',
+            url: `${url}api/v1/items`,
             data: formData,
             contentType: false,
             processData: false,
             dataType: "json",
-            success: function (response) {
-                Swal.fire('Success', 'Item created successfully', 'success');
+            success: function (data) {
+                console.log(data);
                 $("#itemModal").modal("hide");
-                itemTable.ajax.reload();
+                var $itable = $('#itable').DataTable();
+
+                $itable.ajax.reload()
             },
-            error: function (xhr) {
-                const errorMsg = xhr.responseJSON?.message || 'Failed to create item';
-                Swal.fire('Error', errorMsg, 'error');
-                console.error(xhr);
+            error: function (error) {
+                console.log(error);
             }
         });
     });
 
-    // Update existing item
+    $('#itable tbody').on('click', 'a.editBtn', function (e) {
+        e.preventDefault();
+        $('#itemImage').remove()
+        $('#itemId').remove()
+        $("#iform").trigger("reset");
+        // var id = $(e.relatedTarget).attr('data-id');
+
+        var id = $(this).data('id');
+        console.log(id);
+        $('#itemModal').modal('show');
+        $('<input>').attr({ type: 'hidden', id: 'itemId', name: 'item_id', value: id }).appendTo('#iform');
+
+        $('#itemSubmit').hide()
+        $('#itemUpdate').show()
+
+        $.ajax({
+            method: "GET",
+            url: `${url}api/v1/items/${id}`,
+            dataType: "json",
+            success: function (data) {
+                const { result } = data;
+                console.log(result);
+
+                loadCategories().then(() => {
+                    $('#item_name').val(result[0].item_name);
+                    $('#description').val(result[0].description);
+                    $('#sell_price').val(result[0].sell_price);
+                    $('#cost_price').val(result[0].cost_price);
+                    $('#quantity').val(result[0].quantity);
+                    $('#category').val(result[0].category_id || result[0].category).trigger('change');
+
+                    $('#itemImage').remove();
+                    $("#iform").append(`<img src="${url}${result[0].image}" width='200px' height='200px' id="itemImage" />`);
+                });
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+
+    });
+
     $("#itemUpdate").on('click', function (e) {
         e.preventDefault();
-        const itemId = $('#itemId').val();
-        const formData = new FormData($('#iform')[0]);
-        
-        if (!formData.get('item_name') || !formData.get('cost_price') || !formData.get('sell_price')) {
-            Swal.fire('Error', 'Please fill all required fields', 'error');
-            return;
-        }
+        var id = $('#itemId').val();
+        console.log(id);
+        var table = $('#itable').DataTable();
+
+        var data = $('#iform')[0];
+        let formData = new FormData(data);
 
         $.ajax({
             method: "PUT",
-            url: API_BASE_URL + 'items/' + itemId,
+            url: `${url}api/v1/items/${id}`,
             data: formData,
             contentType: false,
             processData: false,
+
             dataType: "json",
-            success: function (response) {
-                Swal.fire('Success', 'Item updated successfully', 'success');
+            success: function (data) {
+                console.log(data);
                 $('#itemModal').modal("hide");
-                itemTable.ajax.reload();
-            },
-            error: function (xhr) {
-                const errorMsg = xhr.responseJSON?.message || 'Failed to update item';
-                Swal.fire('Error', errorMsg, 'error');
-                console.error(xhr);
-            }
-        });
-    });
+                table.ajax.reload()
 
-    // Edit button click handler
-    $('#itable tbody').on('click', '.editBtn', function (e) {
-        e.preventDefault();
-        currentItemId = $(this).data('id');
-        resetItemForm();
-        $('#itemModal').modal('show');
-        $('#modalTitle').text('Edit Item');
-        $('#itemSubmit').hide();
-        $('#itemUpdate').show();
-        $('<input>').attr({ 
-            type: 'hidden', 
-            id: 'itemId', 
-            name: 'item_id', 
-            value: currentItemId 
-        }).appendTo('#iform');
-        loadItemForEdit(currentItemId);
-    });
-
-    // Delete button click handler
-    $('#itable tbody').on('click', '.deleteBtn', function (e) {
-        e.preventDefault();
-        const itemId = $(this).data('id');
-        const $row = $(this).closest('tr');
-
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    method: "DELETE",
-                    url: API_BASE_URL + 'items/' + itemId,
-                    dataType: "json",
-                    success: function (response) {
-                        Swal.fire('Deleted!', response.message || 'Item deleted successfully', 'success');
-                        itemTable.row($row).remove().draw();
-                    },
-                    error: function (xhr) {
-                        const errorMsg = xhr.responseJSON?.message || 'Failed to delete item';
-                        Swal.fire('Error', errorMsg, 'error');
-                    }
-                });
-            }
-        });
-    });
-
-    // Image preview handler
-    $('input[name="image"]').change(function() {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                $('#imagePreview').html(`<img src="${e.target.result}" class="img-thumbnail" width="150">`);
-            }
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Load categories dropdown
-    function loadCategories() {
-        $.ajax({
-            method: "GET",
-            url: API_BASE_URL + 'categories',
-            dataType: "json",
-            success: function (response) {
-                categories = response.rows || []; // Store categories globally
-                const $select = $('#category');
-                $select.empty();
-                $select.append('<option value="">Select Category</option>');
-                
-                categories.forEach(category => {
-                    $select.append(`<option value="${category.category_id}">${category.description}</option>`);
-                });
             },
             error: function (error) {
-                console.error('Failed to load categories:', error);
-                Swal.fire('Error', 'Failed to load categories', 'error');
+                console.log(error);
             }
         });
-    }
+    });
 
-    // Load categories when page loads
-    loadCategories();
-});
+    $('#itable tbody').on('click', 'a.deletebtn', function (e) {
+        e.preventDefault();
+        var table = $('#itable').DataTable();
+        var id = $(this).data('id');
+        var $row = $(this).closest('tr');
+        console.log(id);
+        bootbox.confirm({
+            message: "do you want to delete this item",
+            buttons: {
+                confirm: {
+                    label: 'yes',
+                    className: 'btn-success'
+                },
+                cancel: {
+                    label: 'no',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function (result) {
+                console.log(result);
+                if (result) {
+                    $.ajax({
+                        method: "DELETE",
+                        url: `${url}api/v1/items/${id}`,
+                        dataType: "json",
+                        success: function (data) {
+                            console.log(data);
+                            $row.fadeOut(4000, function () {
+                                table.row($row).remove().draw();
+                            });
+
+                            bootbox.alert(data.message);
+                        },
+                        error: function (error) {
+                            bootbox.alert(data.error);
+                        }
+                    });
+
+                }
+
+            }
+        });
+    })
+})
