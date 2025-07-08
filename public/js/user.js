@@ -29,7 +29,7 @@ $(document).ready(function () {
         }
         $.ajax({
             method: "POST",
-            url: `${url}api/v1/register`,
+            url: `${API_BASE_URL}/register`,
             data: JSON.stringify(user),
             processData: false,
             contentType: 'application/json; charset=utf-8',
@@ -127,7 +127,7 @@ $(document).ready(function () {
 
         $.ajax({
             method: "POST",
-            url: `${url}api/v1/update-profile`,
+            url: `${API_BASE_URL}/update-profile`,
             data: formData,
             contentType: false,
             processData: false,
@@ -173,7 +173,7 @@ $(document).ready(function () {
         }
         $.ajax({
             method: "DELETE",
-            url: `${url}api/v1/deactivate`,
+            url: `${API_BASE_URL}/deactivate`,
             data: JSON.stringify(user),
             processData: false,
             contentType: 'application/json; charset=utf-8',
